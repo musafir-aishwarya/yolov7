@@ -96,6 +96,10 @@ def test(data,
     seen = 0
     confusion_matrix = ConfusionMatrix(nc=nc)
     names = {k: v for k, v in enumerate(model.names if hasattr(model, 'names') else model.module.names)}
+    # ? Cityscapes has 8 classes, but I accidentally train 8 classes plus an extra redundant class.
+    # ? To avoid wrong labeling, I just use 8 classes here.
+    # ? Please remove this line if you are using the correct dataset classes.
+    names = {k: v for k, v in enumerate(['person', 'car', 'truck', 'rider', 'motorcycle', 'bicycle', 'bus', 'train'])}
     coco91class = coco80_to_coco91_class()
     s = ('%20s' + '%12s' * 6) % ('Class', 'Images', 'Labels', 'P', 'R', 'mAP@.5', 'mAP@.5:.95')
     p, r, f1, mp, mr, map50, map, t0, t1 = 0., 0., 0., 0., 0., 0., 0., 0., 0.

@@ -65,6 +65,10 @@ def detect(save_img=False):
 
     # Get names and colors
     names = model.module.names if hasattr(model, 'module') else model.names
+    # ? Cityscapes has 8 classes, but I accidentally train 8 classes plus an extra redundant class.
+    # ? To avoid wrong labeling, I just use 8 classes here.
+    # ? Please remove this line if you are using the correct dataset classes.
+    names = ['person', 'car', 'truck', 'rider', 'motorcycle', 'bicycle', 'bus', 'train']
     colors = [[random.randint(0, 255) for _ in range(3)] for _ in names]
 
     # Run inference
