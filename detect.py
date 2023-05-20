@@ -15,7 +15,8 @@ from utils.general import check_img_size, check_requirements, check_imshow, non_
 from utils.plots import plot_one_box
 from utils.torch_utils import select_device, load_classifier, time_synchronized, TracedModel
 
-from utils.custom_features import crop_bbox
+# Import cropping feature and Latent Diffusion Models (LDM) for super-resolution
+from utils.custom_features import crop_bbox, Latent
 
 
 def detect(save_img=False):
@@ -30,6 +31,9 @@ def detect(save_img=False):
                     exist_ok=opt.exist_ok))  # increment run
     (save_dir / 'labels' if save_txt else save_dir).mkdir(parents=True,
                                                           exist_ok=True)  # make dir
+
+    # Initialize latent SR
+    latent = Latent()
 
     # Initialize
     set_logging()
@@ -68,7 +72,8 @@ def detect(save_img=False):
     # ? Cityscapes has 8 classes, but I accidentally train 8 classes plus an extra redundant class.
     # ? To avoid wrong labeling, I just use 8 classes here.
     # ? Please remove this line if you are using the correct dataset classes.
-    names = ['person', 'car', 'truck', 'rider', 'motorcycle', 'bicycle', 'bus', 'train']
+    names = ['person', 'car', 'truck', 'rider',
+             'motorcycle', 'bicycle', 'bus', 'train']
     colors = [[random.randint(0, 255) for _ in range(3)] for _ in names]
 
     # Run inference
@@ -152,13 +157,49 @@ def detect(save_img=False):
                     if save_img or view_img:  # Add bbox to image
                         label = f'{names[int(cls)]} {conf:.2f}'
                         # Path to save the cropped image
-                        cropped_save_path = f'{save_path[:-4]}_{names[int(cls)]}_{total_class[names[int(cls)]]}.jpg'
+                        cropped_save_path = f'{save_path[:-4]}_{names[int(cls)]}_{total_class[names[int(cls)]]}_org.jpg'
                         # Crop the bounding box
                         cropped_img = crop_bbox(xyxy, im0_tmp)
+                        height, width, _ = cropped_img.shape
+
+                        # # Check if either width or height is smaller than 32 pixels
+                        # if width < 32 or height < 32:
+                        #     # Calculate the aspect ratio
+                        #     aspect_ratio = width / height
+
+                        #     # Resize the image while maintaining the aspect ratio
+                        #     if width < height:
+                        #         new_width = 32
+                        #         new_height = int(new_width / aspect_ratio)
+                        #     else:
+                        #         new_height = 32
+                        #         new_width = int(new_height * aspect_ratio)
+
+                        #     # Resize the image
+                        #     cropped_img = cv2.resize(
+                        #         cropped_img, (new_width, new_height))
+
                         # Save the cropped image
-                        print(
-                            f'Cropped img saved to: {cropped_save_path}')
-                        cv2.imwrite(cropped_save_path, cropped_img)
+                        if cropped_img.shape[0] >= 32 and cropped_img.shape[1] >= 32:
+                            print(
+                                f'Cropped org img saved to: {cropped_save_path}')
+                            cv2.imwrite(cropped_save_path, cropped_img)
+
+                            # Super resolution for cropped region
+                            if opt.sr:
+                                # The cropped region should be smaller than the maximum region size
+                                if (height * width <= opt.sr_area_size):
+                                    # SR cropped image
+                                    cropped_img_SR = latent.inference(
+                                        cropped_img, opt.sr_step)
+                                    # Path to save the cropped SR image
+                                    cropped_SR_save_path = f'{cropped_save_path}_sr.jpg'
+                                    # Save the cropped SR image
+                                    print(
+                                        f'Cropped SR img saved to: {cropped_SR_save_path}')
+                                    cv2.imwrite(cropped_SR_save_path,
+                                                cropped_img_SR)
+
                         # Add 1 to the count of the class
                         total_class[names[int(cls)]] += 1
                         # Plot the bounding box
@@ -242,6 +283,10 @@ if __name__ == '__main__':
                         help='existing project/name ok, do not increment')
     parser.add_argument('--no-trace', action='store_true',
                         help='don`t trace model')
+    parser.add_argument('--sr', action='store_true',
+                        help='execute super resolution')
+    parser.add_argument('--sr-area-size', default=22500, type=int)
+    parser.add_argument('--sr-step', default=100, type=int)
     opt = parser.parse_args()
     print(opt)
     # check_requirements(exclude=('pycocotools', 'thop'))
