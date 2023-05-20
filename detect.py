@@ -157,7 +157,7 @@ def detect(save_img=False):
                     if save_img or view_img:  # Add bbox to image
                         label = f'{names[int(cls)]} {conf:.2f}'
                         # Path to save the cropped image
-                        cropped_save_path = f'{save_path[:-4]}_{names[int(cls)]}_{total_class[names[int(cls)]]}_org.jpg'
+                        cropped_save_path = f'{save_path[:-4]}_{names[int(cls)]}_{total_class[names[int(cls)]]}_org'
                         # Crop the bounding box
                         cropped_img = crop_bbox(xyxy, im0_tmp)
                         height, width, _ = cropped_img.shape
@@ -182,8 +182,9 @@ def detect(save_img=False):
                         # Save the cropped image
                         if cropped_img.shape[0] >= 32 and cropped_img.shape[1] >= 32:
                             print(
-                                f'Cropped org img saved to: {cropped_save_path}')
-                            cv2.imwrite(cropped_save_path, cropped_img)
+                                f'Cropped org img saved to: {cropped_save_path}.jpg')
+                            cv2.imwrite(
+                                f'{cropped_save_path}.jpg', cropped_img)
 
                             # Super resolution for cropped region
                             if opt.sr:
@@ -193,12 +194,12 @@ def detect(save_img=False):
                                     cropped_img_SR = latent.inference(
                                         cropped_img, opt.sr_step)
                                     # Path to save the cropped SR image
-                                    cropped_SR_save_path = f'{cropped_save_path}_sr.jpg'
+                                    cropped_SR_save_path = f'{save_path[:-4]}_{names[int(cls)]}_{total_class[names[int(cls)]]}_sr'
                                     # Save the cropped SR image
                                     print(
-                                        f'Cropped SR img saved to: {cropped_SR_save_path}')
-                                    cv2.imwrite(cropped_SR_save_path,
-                                                cropped_img_SR)
+                                        f'Cropped SR img saved to: {cropped_SR_save_path}.jpg')
+                                    cv2.imwrite(
+                                        f'{cropped_SR_save_path}.jpg', cropped_img_SR)
 
                         # Add 1 to the count of the class
                         total_class[names[int(cls)]] += 1
