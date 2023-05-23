@@ -188,18 +188,16 @@ def detect(save_img=False):
 
                             # Super resolution for cropped region
                             if opt.sr:
-                                # The cropped region should be smaller than the maximum region size
-                                if (height * width <= opt.sr_area_size):
-                                    # SR cropped image
-                                    cropped_img_SR = latent.inference(
-                                        cropped_img, opt.sr_step)
-                                    # Path to save the cropped SR image
-                                    cropped_SR_save_path = f'{save_path[:-4]}_{names[int(cls)]}_{total_class[names[int(cls)]]}_sr'
-                                    # Save the cropped SR image
-                                    print(
-                                        f'Cropped SR img saved to: {cropped_SR_save_path}.jpg')
-                                    cv2.imwrite(
-                                        f'{cropped_SR_save_path}.jpg', cropped_img_SR)
+                                # SR cropped image
+                                cropped_img_SR = latent.inference(
+                                    cropped_img, opt.sr_step)
+                                # Path to save the cropped SR image
+                                cropped_SR_save_path = f'{save_path[:-4]}_{names[int(cls)]}_{total_class[names[int(cls)]]}_sr'
+                                # Save the cropped SR image
+                                print(
+                                    f'Cropped SR img saved to: {cropped_SR_save_path}.jpg')
+                                cv2.imwrite(
+                                    f'{cropped_SR_save_path}.jpg', cropped_img_SR)
 
                         # Add 1 to the count of the class
                         total_class[names[int(cls)]] += 1
@@ -286,7 +284,6 @@ if __name__ == '__main__':
                         help='don`t trace model')
     parser.add_argument('--sr', action='store_true',
                         help='execute super resolution')
-    parser.add_argument('--sr-area-size', default=22500, type=int)
     parser.add_argument('--sr-step', default=100, type=int)
     opt = parser.parse_args()
     print(opt)
