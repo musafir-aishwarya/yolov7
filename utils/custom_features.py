@@ -4,6 +4,7 @@ import torch
 import numpy as np
 from PIL import Image
 from diffusers import LDMSuperResolutionPipeline
+import argparse
 
 
 def crop_bbox(x, img):
@@ -24,7 +25,6 @@ class Latent:
         self.pipeline = self.pipeline.to(device)
 
     def inference(self, target_img, step=10):
-        print(target_img.shape)
         start_time = time.time()
         # Convert img from BGR to RGB
         upscaled_image = Image.fromarray(
@@ -39,3 +39,25 @@ class Latent:
 
         print(f'SR inference time: {stop_time-start_time}')
         return upscaled_image
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--input-img', default='/inference/images/bus.jpg')
+    parser.add_argument('--sr-area-size', default=22500, type=int)
+    parser.add_argument('--sr-step', default=100, type=int)
+    args = parser.parse_args()
+    image = cv2.imread(args.input_img)
+    size = image.shape[0] * image.shape[1]
+
+    print(
+        f'Image shape: {image.shape}, Image size: {size}, Max SR area size: {args.sr_area_size}')
+
+    if (size <= args.sr_area_size):
+        print(f'Image size is smaller than SR area size, start SR...')
+        latent = Latent()
+        upscaled_image = latent.inference(image, args.sr_step)
+        cv2.imwrite(f'{args.input_img[:-4]}_sr.jpg', upscaled_image)
+        print(f'SR image saved to {args.input_img[:-4]}_sr.jpg')
+    else:
+        print(f'Image size is larger than SR area size, abort SR...')

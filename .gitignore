@@ -264,5 +264,6 @@ fabric.properties
 
 # Custom files
 *.out
+!inference/images/cropped_car.jpg
 slurm_train.sh
 customdata
