@@ -15,17 +15,15 @@ import cv2
 import torch
 import torch.backends.cudnn as cudnn
 from numpy import random
-import numpy as np
 
 from models.experimental import attempt_load
 from utils.datasets import LoadStreams, LoadImages
-from utils.general import check_img_size, check_requirements, check_imshow, non_max_suppression, apply_classifier, \
-    scale_coords, xyxy2xywh, strip_optimizer, set_logging, increment_path
-from utils.plots import plot_one_box
-from utils.torch_utils import select_device, load_classifier, time_synchronized, TracedModel
+from utils.general import check_img_size, check_imshow, non_max_suppression, apply_classifier, \
+    scale_coords, set_logging, increment_path
+from utils.torch_utils import select_device, load_classifier, TracedModel
 
 # Import cropping feature and Latent Diffusion Models (LDM) for super-resolution
-from utils.custom_features import crop_bbox, Latent
+from utils.custom_features import Latent
 
 app = Flask(__name__)
 CORS(app)
@@ -83,7 +81,7 @@ webcam = source.isnumeric() or source.endswith('.txt') or source.lower().startsw
 save_dir = Path(increment_path(Path(opt.project) / opt.name,
                 exist_ok=opt.exist_ok))  # increment run
 (save_dir / 'labels' if save_txt else save_dir).mkdir(parents=True,
-                                                        exist_ok=True)  # make dir
+                                                      exist_ok=True)  # make dir
 
 # Initialize latent SR
 latent = Latent()
@@ -119,7 +117,7 @@ names = model.module.names if hasattr(model, 'module') else model.names
 # ? To avoid wrong labeling, I just use 8 classes here.
 # ? Please remove this line if you are using the correct dataset classes.
 names = ['person', 'car', 'truck', 'rider',
-            'motorcycle', 'bicycle', 'bus', 'train']
+         'motorcycle', 'bicycle', 'bus', 'train']
 colors = [[random.randint(0, 255) for _ in range(3)] for _ in names]
 
 # Run inference
@@ -131,12 +129,13 @@ old_img_b = 1
 
 t0 = time.time()
 
+
 @app.route("/detect", methods=['POST'])
 def detect():
     file = request.files['file']
     source = str(os.path.join(save_dir, str(time.time()) + ".png"))
     file.save(source)
-    
+
     # Set Dataloader
     vid_path, vid_writer = None, None
     if webcam:
@@ -184,6 +183,7 @@ def detect():
 
         return [({"xyxy": dt[:4], "conf": dt[4], "class": dt[5]}) for dt in reversed(det)]
 
+
 @app.route("/enlarge", methods=['POST'])
 def superResolution():
     file = request.files['file']
@@ -198,5 +198,6 @@ def superResolution():
     # Save the cropped SR image
     return send_file(sr_path)
 
+
 print('start serving')
-app.run(port=30701,host='0.0.0.0')
+app.run(port=30701, host='0.0.0.0')
